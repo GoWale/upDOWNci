@@ -12,6 +12,8 @@ CLASS zcl_updownci_file DEFINITION
         RETURNING VALUE(rv_xml) TYPE string
         RAISING   cx_bcs zcx_updownci_exception.
 
+protected section.
+private section.
 ENDCLASS.
 
 
@@ -34,6 +36,7 @@ CLASS ZCL_UPDOWNCI_FILE IMPLEMENTATION.
       EXPORTING
         default_extension    = 'xml'
         default_file_name    = iv_default
+        file_filter          = cl_gui_frontend_services=>filetype_xml && cl_gui_frontend_services=>filetype_all
       CHANGING
         filename             = lv_filename
         path                 = lv_path
@@ -111,6 +114,7 @@ CLASS ZCL_UPDOWNCI_FILE IMPLEMENTATION.
     cl_gui_frontend_services=>file_open_dialog(
       EXPORTING
         default_extension       = 'xml'
+        file_filter             = cl_gui_frontend_services=>filetype_xml && cl_gui_frontend_services=>filetype_all
       CHANGING
         file_table              = lt_file_table
         rc                      = lv_rc

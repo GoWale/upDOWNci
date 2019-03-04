@@ -50,7 +50,7 @@ CLASS zcl_updownci DEFINITION
       BEGIN OF ty_type,
         parameter TYPE string,
         name      TYPE string,
-        type      TYPE string,
+        type_ref  TYPE REF TO cl_abap_datadescr,
         field     TYPE string,
       END OF ty_type.
 
@@ -104,7 +104,6 @@ CLASS zcl_updownci DEFINITION
         IMPORTING it_types       TYPE ty_type_tt
         RETURNING VALUE(rr_data) TYPE REF TO data
         RAISING   zcx_updownci_exception.
-
 ENDCLASS.
 
 
@@ -261,7 +260,7 @@ CLASS ZCL_UPDOWNCI IMPLEMENTATION.
     LOOP AT it_types ASSIGNING <ls_type>.
       APPEND INITIAL LINE TO lt_components ASSIGNING <ls_component>.
       <ls_component>-name = <ls_type>-name.
-      <ls_component>-type ?= cl_abap_typedescr=>describe_by_name( <ls_type>-type ).
+      <ls_component>-type ?= <ls_type>-type_ref.
     ENDLOOP.
 
     SORT lt_components BY name ASCENDING.
@@ -312,17 +311,24 @@ CLASS ZCL_UPDOWNCI IMPLEMENTATION.
 
   METHOD find_types.
 
-    DATA: lv_name  TYPE seocmpname,
-          lv_field TYPE string,
-          lv_type  TYPE string,
-          lt_attr  TYPE seo_attributes.
+    DATA: lv_name       TYPE seocmpname,
+          lv_field      TYPE string,
+          lv_type       TYPE string,
+          lt_class_type TYPE abap_typedef_tab,
+          lo_type_ref   TYPE REF TO cl_abap_datadescr,
+          lt_class_attr TYPE seo_attributes.
 
     FIELD-SYMBOLS: <ls_type>      LIKE LINE OF rt_types,
-                   <ls_attr>      LIKE LINE OF lt_attr,
                    <ls_parameter> LIKE LINE OF it_parameters.
 
 
-    lt_attr = zcl_updownci_class=>attributes( iv_class ).
+    lt_class_attr = zcl_updownci_class=>attributes( iv_class ).
+
+    DATA:
+              lo_class_desc TYPE REF TO cl_abap_classdescr.
+
+    lo_class_desc ?= cl_abap_classdescr=>describe_by_name( iv_class ).
+    lt_class_type = lo_class_desc->types.
 
     LOOP AT it_parameters ASSIGNING <ls_parameter>.
       IF <ls_parameter>-value CA '-'.
@@ -332,31 +338,30 @@ CLASS ZCL_UPDOWNCI IMPLEMENTATION.
         CLEAR lv_field.
       ENDIF.
 
-      READ TABLE lt_attr ASSIGNING <ls_attr> WITH KEY cmpname = lv_name.
-      IF sy-subrc = 0.
-        lv_type = <ls_attr>-type.
-      ENDIF.
+      CLEAR lo_type_ref.
+      lo_class_desc->get_attribute_type(  EXPORTING p_name = lv_name
+                                          RECEIVING p_descr_ref = lo_type_ref
+                                          EXCEPTIONS attribute_not_found = 1   ).
+      IF sy-subrc <> 0.
+        " Fallback Date Type
+        CASE iv_class.
+          WHEN 'CL_CI_TEST_EXTENDED_CHECK'.
+            IF lv_name CS 'TRANSPORT_CHECK'.
+              lo_type_ref ?= cl_abap_classdescr=>describe_by_name( 'ABAP_BOOL' ).
+            ENDIF.
+        ENDCASE.
 
-      IF lv_type IS INITIAL.
-        IF iv_class = 'CL_WDY_CI_TEST_CONVENTIONS'.
-          lv_type = 'TY_WDY_CI_TEST_CONVENTIONS'.
-        ELSE.
-          lv_type = 'ABAP_BOOL'.
+        IF lo_type_ref IS NOT BOUND.
+          " todo raise !
+          BREAK-POINT.
         ENDIF.
       ENDIF.
 
-      IF lv_name = 'M_OPTION' AND lv_field = 'SCAN_WEB_DYNPRO'.
-* special handling for CL_CI_TEST_ABAP_NAMING_NEW
-        lv_type = 'ABAP_BOOL'.
-      ENDIF.
-
-
       APPEND INITIAL LINE TO rt_types ASSIGNING <ls_type>.
       <ls_type>-parameter = <ls_parameter>-name.
-      <ls_type>-name = lv_name.
-      <ls_type>-type = lv_type.
-      <ls_type>-field = lv_field.
-
+      <ls_type>-name      = lv_name.
+      <ls_type>-type_ref  = lo_type_ref.
+      <ls_type>-field     = lv_field.
     ENDLOOP.
 
   ENDMETHOD.                    "find_types
@@ -398,8 +403,8 @@ CLASS ZCL_UPDOWNCI IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-* special handling for CL_SAUNIT_LEGACY_CI_CHECK
-      REPLACE FIRST OCCURRENCE OF 'me->' IN lv_source WITH ''.
+* special handling for CL_SAUNIT_LEGACY_CI_CHECK / CL_CI_TEST_ABAP_NAMING_NEW
+      REPLACE FIRST OCCURRENCE OF 'ME->' IN lv_source WITH '' IGNORING CASE.
 
       IF NOT <ls_parameter> IS ASSIGNED.
         APPEND INITIAL LINE TO rt_parameters ASSIGNING <ls_parameter>.

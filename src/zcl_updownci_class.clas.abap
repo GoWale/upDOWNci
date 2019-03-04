@@ -1,35 +1,39 @@
-CLASS zcl_updownci_class DEFINITION
-  PUBLIC
-  FINAL
-  CREATE PUBLIC .
+class ZCL_UPDOWNCI_CLASS definition
+  public
+  final
+  create public .
 
-  PUBLIC SECTION.
+public section.
 
-    TYPES: BEGIN OF ty_redirect,
+  types:
+    BEGIN OF ty_redirect,
              from TYPE seoclsname,
              to   TYPE seoclsname,
-           END OF ty_redirect.
+           END OF ty_redirect .
 
-    CLASS-DATA: mt_redirect TYPE STANDARD TABLE OF ty_redirect WITH DEFAULT KEY.
+  class-data:
+    mt_redirect TYPE STANDARD TABLE OF ty_redirect WITH DEFAULT KEY .
 
-    CLASS-METHODS add_redirect
-      IMPORTING
-        !iv_from TYPE seoclsname
-        !iv_to   TYPE seoclsname .
-    CLASS-METHODS find_include
-      IMPORTING
-        !iv_class         TYPE seoclsname
-      RETURNING
-        VALUE(rv_include) TYPE program
-      RAISING
-        cx_static_check .
-    CLASS-METHODS attributes
-      IMPORTING
-        !iv_class            TYPE seoclsname
-      RETURNING
-        VALUE(rt_attributes) TYPE seo_attributes
-      RAISING
-        cx_static_check .
+  class-methods ATTRIBUTES
+    importing
+      !IV_CLASS type SEOCLSNAME
+    returning
+      value(RT_ATTRIBUTES) type SEO_ATTRIBUTES
+    raising
+      CX_STATIC_CHECK .
+  class-methods ADD_REDIRECT
+    importing
+      !IV_FROM type SEOCLSNAME
+      !IV_TO type SEOCLSNAME .
+  class-methods FIND_INCLUDE
+    importing
+      !IV_CLASS type SEOCLSNAME
+    returning
+      value(RV_INCLUDE) type PROGRAM
+    raising
+      CX_STATIC_CHECK .
+protected section.
+private section.
 ENDCLASS.
 
 
@@ -71,7 +75,7 @@ CLASS ZCL_UPDOWNCI_CLASS IMPLEMENTATION.
       APPEND LINES OF lt_attributes TO rt_attributes.
     ENDIF.
 
-  ENDMETHOD.                    "attributes
+  ENDMETHOD.
 
 
   METHOD find_include.

@@ -31,8 +31,9 @@ REPORT zupdownci.
 
 TABLES: seoclass.
 
-PARAMETERS: p_user TYPE sci_user DEFAULT sy-uname,
-            p_name TYPE sci_chkv DEFAULT 'DEFAULT' OBLIGATORY.
+PARAMETERS: p_user TYPE sci_user ," DEFAULT sy-uname,
+*            p_name TYPE sci_chkv DEFAULT 'DEFAULT' OBLIGATORY.
+            p_name TYPE sci_chkv DEFAULT 'Z_DEV_ATC_ONLI' OBLIGATORY.
 
 SELECT-OPTIONS: s_class FOR seoclass-clsname.
 
